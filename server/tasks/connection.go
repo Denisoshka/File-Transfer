@@ -1,11 +1,12 @@
 package tasks
 
 import (
-	"encoding/binary"
-	"io"
+	"lab2/utils"
+	"lab2/utils/requests"
 	"net"
+	"os"
+	"path/filepath"
 	"time"
-	"xyi/helpers/requests"
 )
 
 var (
@@ -14,70 +15,123 @@ var (
 )
 
 type Connection struct {
-	buf  []byte
-	conn net.Conn
+	dirPath string
+	buf     []byte
+	conn    *net.TCPConn
 }
 
-func NewConnection(conn *net.TCPConn) *Connection {
+func NewConnection(dirPath string, conn *net.TCPConn) *Connection {
 	return &Connection{
-		conn: conn,
+		dirPath: dirPath,
+		conn:    conn,
 	}
 }
 
 func (c *Connection) StartNetWorker() {
 	conn := c.conn
-	defer func(conn net.Conn) {
+	defer func(conn *net.TCPConn) {
 		_ = conn.Close()
 	}(conn)
-
-	var headerSize uint32
-	err := binary.Read(conn, binary.BigEndian, &headerSize)
-	if err != nil {
-		//todo
-		return
-	}
-	headerBuf := make([]byte, headerSize)
-	err = c.readN(headerBuf, int(headerSize))
-	if err != nil {
-		//todo
-		return
-	}
-	header, err := requests.NewInitialRequest(headerBuf)
+	header, err := utils.ReadHeader(c)
 	if err != nil {
 		//todo
 		return
 	}
 
-	buf := make([]byte, bufSize)
-	totalRead := uint64(0)
+	filePath := filepath.Join(c.dirPath, header.FileName)
+	file, err := utils.CreateFile(filePath, int64(header.FileSize))
+	defer func(file *os.File) {
+		_ = file.Close()
+	}(file)
+
+	if err != nil {
+		//todo
+		return
+	}
+
+	buf1 := utils.NewBuffer(bufSize)
+	buf2 := utils.NewBuffer(bufSize)
+	getCh := make(chan *utils.Buffer, 2)
+	putCh := make(chan *utils.Buffer, 2)
+	errCh := make(chan error, 1)
+	go startFileWorker(file, putCh, getCh, errCh)
+	defer close(getCh)
+	defer close(putCh)
+	defer close(errCh)
+	putCh <- buf1
+	putCh <- buf2
+
+	var totalRead uint64 = 0
 	for n := 0; totalRead < header.FileSize; totalRead += uint64(n) {
-		n, err = conn.Read(buf)
+		buf := <-getCh
+		n, err = conn.Read(buf.Data)
+		buf.Load = n
 		if err != nil {
-			//todo
-			return
+			break
 		}
+		putCh <- buf
 	}
-
+	close(putCh)
+	close(errCh)
+	err = <-errCh
+	if err == nil {
+		err = c.completeSuccessfully(filePath)
+	}
+	if err != nil {
+		_ = c.completeUnsuccessfully(err)
+	}
 }
 
-func (c *Connection) readN(b []byte, n int) error {
-	totalRead := 0
-	conn := c.conn
+func startFileWorker(
+	file *os.File,
+	getCh <-chan *utils.Buffer,
+	putCh chan<- *utils.Buffer,
+	errCh chan<- error,
+) {
+	buf1 := <-getCh
+	buf2 := <-getCh
+	putCh <- buf1
+	putCh <- buf2
+	var err error = nil
+	defer func(ch chan<- error, err error) {
+		ch <- err
+	}(errCh, err)
 
-	err := conn.SetDeadline(time.Now().Add(maximumInactivity))
-	if err != nil {
-		return err
-	}
-
-	for totalRead < n {
-		bytesRead, err := conn.Read(b[totalRead:])
-		if err == io.EOF {
+	for {
+		buf, opened := <-getCh
+		if !opened {
 			break
-		} else if err != nil {
-			return err
 		}
-		totalRead += bytesRead
+		err = utils.FileWriteBuffer(file, buf)
+		if err != nil {
+			break
+		}
+		putCh <- buf
 	}
+}
 
+func (c *Connection) completeSuccessfully(filepath string) error {
+	req, _ := requests.NewResponseReq(
+		"complete successfully",
+		requests.SuccessReq,
+	)
+	data, _ := req.MarshalBinary()
+	c.conn.Write(data)
+	return nil
+}
+
+func (c *Connection) completeUnsuccessfully(err error) error {
+	req, err := requests.NewResponseReq(
+		err.Error(),
+		requests.ErrorReqMask,
+	)
+	if err != nil {
+		req, _ = requests.NewResponseReq(
+			"server error",
+			requests.ErrorReqMask,
+		)
+	}
+	data, _ := req.MarshalBinary()
+	_, err = c.conn.Write(data)
 	return nil
 }
