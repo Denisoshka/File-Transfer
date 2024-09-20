@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"lab2"
 	serverinterfaces "lab2/server-interfaces"
 	"lab2/utils"
 	"net"
@@ -47,5 +48,9 @@ func (a *ConnectionAcceptor) Launch() {
 				continue
 			}
 		}
+
+		lab2.Log.Infoln("new connection from ", conn.RemoteAddr())
+		d := NewTCPDownloader(a.saveDir, a.maxInactivity, conn)
+		go d.Launch()
 	}
 }

@@ -14,10 +14,10 @@ const ErrorResponse int16 = 1
 const SuccessResponse int16 = 0
 
 var (
-	MessageTooLargeError   = errors.New("message too long")
-	BufferTooSmallError    = errors.New("buffer too small")
+	MessageTooLargeError   = errors.New("long message")
+	BufferTooSmallError    = errors.New("small buffer")
 	InvalidHeaderSizeError = errors.New("invalid header size")
-	FileNameTooLargeError  = errors.New("file name too large")
-	FileSizeTooLargeError  = errors.New("file size too large")
+	FileNameTooLargeError  = errors.New("large file name")
+	FileSizeTooLargeError  = errors.New("large file size")
 	IncorrectRequestSize   = errors.New("incorrect request size")
 )

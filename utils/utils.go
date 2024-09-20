@@ -75,5 +75,17 @@ func FileWriteN(file *os.File, data []byte, n int) (total int, err error) {
 		}
 		total += start
 	}
+	return total, err
+}
 
+func FileReadN(file *os.File, data []byte, n int) (total int, err error) {
+	total = 0
+	for i := 0; i < n; i++ {
+		start, err := file.Read(data[total:n])
+		if err != nil {
+			break
+		}
+		total += start
+	}
+	return total, err
 }

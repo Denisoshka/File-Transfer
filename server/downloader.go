@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"lab2"
 	"lab2/requests"
 	"lab2/utils"
@@ -17,74 +18,93 @@ const (
 	BufSize = 1024 * 1024
 )
 
-type Uploader struct {
+type TCPDownloader struct {
 	dirPath                string
 	maxConnInactivityDelay time.Duration
 	conn                   *net.TCPConn
 	//buf      []byte
 }
 
-func NewUploader(dirPath string, maxDelay time.Duration,
-	conn *net.TCPConn) *Uploader {
-	return &Uploader{
+func NewTCPDownloader(dirPath string, maxDelay time.Duration,
+	conn *net.TCPConn) *TCPDownloader {
+	return &TCPDownloader{
 		dirPath:                dirPath,
 		maxConnInactivityDelay: maxDelay,
 		conn:                   conn,
 	}
 }
 
-func (u *Uploader) Launch() {
+func (u *TCPDownloader) Launch() {
 	defer func(conn *net.TCPConn) { _ = conn.Close() }(u.conn)
 	req, noticeConnection, err := u.handleInitialReq()
 	if err != nil {
 		if noticeConnection {
-			_ = u.noticeUploadFailed(err.Error())
+			_ = u.noticeDownloadFailed(err.Error())
 		}
 		lab2.Log.Info(
 			"upload failed with error: ", err, " from ", u.conn.RemoteAddr(),
 		)
 	}
+
 	filePath := path.Join(u.dirPath, req.Name)
-	file, fileExists, err := utils.PrepareFile(filePath, int64(req.DataSize))
+	file, fileExists, err := utils.PrepareFile(filePath, req.DataSize)
 	if err != nil {
 		if fileExists {
-			_ = u.noticeUploadFailed("this file already exists")
+			_ = u.noticeDownloadFailed("this file already exists")
 		} else {
-			_ = u.noticeUploadFailed("unable to save file")
+			_ = u.noticeDownloadFailed("unable to save file")
 		}
 		return
 	}
 
-	bufManager := utils.NewBufferManager(BufSize)
 	defer func(file *os.File) { _ = file.Close() }(file)
-	defer func(bufManager *utils.BufferManager) { bufManager.Close() }(bufManager)
-	go fileWriter(file, bufManager)
 
-	total := int64(0)
-	for total < req.DataSize {
-		buf, _ := bufManager.GetEmptyBuffer()
-		n, err := utils.ConnReadN(
-			u.conn, buf.Data, buf.Total, u.maxConnInactivityDelay,
-		)
-		if err != nil {
-			var netErr net.Error
-			if errors.As(err, &netErr) && netErr.Timeout() {
-				err = u.noticeUploadFailed(err.Error())
-				lab2.Log.Debugln(u.conn, err)
-			}
-			lab2.Log.Errorln(u.conn, err)
-			return
-		}
-		bufManager.PushFullBuffer(buf)
-		total += int64(n)
-	}
+	total, err := u.downloadFile(req.DataSize, file)
+
 	if total == req.DataSize {
-		err = u.noticeUploadSuccesfule(fmt.Sprint("recorded ", total, " bytes"))
+		err = u.noticeDownloadSuccessful(fmt.Sprint("recorded ", total, " bytes"))
 		lab2.Log.Debugln(u.conn, err)
 		return
 	}
-	err = u.noticeUploadFailed(fmt.Sprint("recorded ", total, " bytes"))
+
+	err = u.noticeDownloadFailed(fmt.Sprint("recorded ", total, " bytes"))
 	lab2.Log.Debugln(u.conn, err)
+}
+
+func (u *TCPDownloader) downloadFile(dataSize int64, file *os.File) (total int64,
+	err error) {
+	bufManager := utils.NewBufferManager(BufSize)
+	defer func(bufManager *utils.BufferManager) { bufManager.Close() }(bufManager)
+	go fileWriter(file, bufManager)
+
+	total = int64(0)
+	for total < dataSize {
+		buf, _ := bufManager.GetEmptyBuffer()
+		var n int
+		n, err = utils.ConnReadN(
+			u.conn, buf.Data, buf.MaxCapacity, u.maxConnInactivityDelay,
+		)
+		buf.CurCapacity = n
+
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			var netErr net.Error
+			if errors.As(err, &netErr) && netErr.Timeout() {
+				err = u.noticeDownloadFailed(err.Error())
+				lab2.Log.Debugln(u.conn, err)
+				return total, err
+			}
+			lab2.Log.Errorln(u.conn, err)
+			return total, err
+		}
+
+		bufManager.PushFullBuffer(buf)
+		total += int64(n)
+	}
+	return total, nil
 }
 
 func fileWriter(file *os.File, bufManager *utils.BufferManager) {
@@ -93,14 +113,15 @@ func fileWriter(file *os.File, bufManager *utils.BufferManager) {
 		if !opened {
 			return
 		}
-		_, err := utils.FileWriteN(file, buf.Data, buf.Total)
+		_, err := utils.FileWriteN(file, buf.Data, buf.MaxCapacity)
 		if err != nil {
+			lab2.Log.Errorln("file: ", file.Name(), " error occurred ", err)
 			return
 		}
 	}
 }
 
-func (u *Uploader) handleInitialReq() (req *requests.Initial,
+func (u *TCPDownloader) handleInitialReq() (req *requests.Initial,
 	noticeConnection bool, err error) {
 	reqSizeBuf := make([]byte, 4)
 	_, err = utils.ConnReadN(u.conn, reqSizeBuf, 4, u.maxConnInactivityDelay)
@@ -131,17 +152,21 @@ func (u *Uploader) handleInitialReq() (req *requests.Initial,
 	return initialReq, false, nil
 }
 
-func (u *Uploader) noticeUploadSuccesfule(message string) (err error) {
+func (u *TCPDownloader) noticeDownloadSuccessful(message string) (err error) {
 	return notice(message, requests.SuccessResponse, u.conn)
 }
 
-func (u *Uploader) noticeUploadFailed(message string) (err error) {
+func (u *TCPDownloader) noticeDownloadFailed(message string) (err error) {
 	return notice(message, requests.ErrorResponse, u.conn)
 }
 
 func notice(message string, responseType int16, conn net.Conn) (err error) {
+	if uint64(len(message)) > uint64(requests.MaxMessageSize) {
+		message = ""
+	}
 	req, err := requests.NewResponse(responseType, message)
 	if err != nil {
+		lab2.Log.Debugln("what the fuck???")
 		return err
 	}
 	data := make([]byte, req.HeaderSize)

@@ -30,6 +30,10 @@ func NewResponse(status int16, message string) (response *Response,
 	}, nil
 }
 
+func (r *Response) Size() int32 {
+	return ResponseSize(r.MessageSize)
+}
+
 func ResponseSize(messageSize int16) int32 {
 	return int32(4 + 2 + 2 + 2 + messageSize)
 }
@@ -47,6 +51,9 @@ func (r *Response) CodeTo(data []byte) (err error) {
 	decoder.PutUint16(data[4:6], uint16(r.ReqType))
 	decoder.PutUint16(data[6:8], uint16(r.Status))
 	decoder.PutUint16(data[8:10], uint16(r.MessageSize))
+	if r.MessageSize > MaxMessageSize {
+		return MessageTooLargeError
+	}
 	copy(data[10:r.MessageSize], r.Message)
 	return nil
 }

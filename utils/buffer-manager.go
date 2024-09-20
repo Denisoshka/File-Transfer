@@ -8,14 +8,16 @@ type BufferManager struct {
 }
 
 type Buffer struct {
-	Data  []byte
-	Total int
+	Data        []byte
+	MaxCapacity int
+	CurCapacity int
 }
 
 func NewBuffer(bufSize int) (b *Buffer) {
 	return &Buffer{
-		Data:  make([]byte, bufSize),
-		Total: 0,
+		Data:        make([]byte, bufSize),
+		MaxCapacity: bufSize,
+		CurCapacity: 0,
 	}
 }
 

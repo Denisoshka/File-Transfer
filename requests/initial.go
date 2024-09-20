@@ -31,6 +31,10 @@ func NewInitial(dataSize int64, name string) (req *Initial, err error) {
 	}, nil
 }
 
+func (r *Initial) Size() int32 {
+	return InitialSize(r.NameSize)
+}
+
 func InitialSize(nameSize int16) int32 {
 	return int32(4 + 2 + 8 + 2 + 2 + nameSize)
 }
@@ -45,7 +49,13 @@ func (r *Initial) CodeTo(data []byte) (err error) {
 	dc.PutUint32(data[0:4], uint32(r.HeaderSize))
 	dc.PutUint16(data[4:6], uint16(r.ReqType))
 	dc.PutUint64(data[6:14], uint64(r.DataSize))
+	if r.DataSize > MaxFileSize {
+		return FileSizeTooLargeError
+	}
 	dc.PutUint16(data[14:16], uint16(r.NameSize))
+	if r.NameSize > MaxFileNameSize {
+		return FileNameTooLargeError
+	}
 	copy(data[16:size], r.Name)
 	return nil
 }
