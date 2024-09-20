@@ -9,13 +9,6 @@ import (
 	"time"
 )
 
-/*
-	type SpeedInfo struct {
-		lastUpdate time.Time
-		recordedQ  int
-	}
-*/
-
 type SpeedTracker struct {
 	serverinterfaces.AbstractSpeedTracker
 	trackDelay time.Duration

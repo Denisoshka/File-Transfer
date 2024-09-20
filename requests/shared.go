@@ -2,17 +2,16 @@ package requests
 
 import (
 	"errors"
-	"net"
 )
 
-const InitialReq uint16 = 0
-const MaxFileNameSize uint16 = 4096
+const InitialReq int16 = 0
+const MaxFileNameSize int16 = 4096
 const MaxFileSize int64 = 1024 * 1024 * 1024 * 1024
-const ResponseReq uint16 = 1
-const MaxMessageSize uint16 = 4096
-const ErrorResponse = uint16(1)
 
-const SuccessResponse = uint16(0)
+const ResponseReq int16 = 1
+const MaxMessageSize int16 = 4096
+const ErrorResponse int16 = 1
+const SuccessResponse int16 = 0
 
 var (
 	MessageTooLargeError   = errors.New("message too long")
@@ -22,6 +21,3 @@ var (
 	FileSizeTooLargeError  = errors.New("file size too large")
 	IncorrectRequestSize   = errors.New("incorrect request size")
 )
-
-func ReadRequest(conn net.Conn, n uint32, data []byte) {
-}

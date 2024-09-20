@@ -5,33 +5,33 @@ import (
 )
 
 type Response struct {
-	HeaderSize  uint32
-	ReqType     uint16
-	Status      uint16
-	MessageSize uint16
+	HeaderSize  int32
+	ReqType     int16
+	Status      int16
+	MessageSize int16
 	Message     string
 }
 
 // NewResponse
 // err MessageTooLargeError if len(message) > MaxMessageSize
-func NewResponse(status uint16, message string) (response *Response,
+func NewResponse(status int16, message string) (response *Response,
 	err error) {
 	messageSize := len(message)
-	if uint64(messageSize) > uint64(MaxMessageSize) {
+	if int64(messageSize) > int64(MaxMessageSize) {
 		return nil, MessageTooLargeError
 	}
 
 	return &Response{
-		HeaderSize:  ResponseSize(uint16(messageSize)),
+		HeaderSize:  ResponseSize(int16(messageSize)),
 		ReqType:     ResponseReq,
 		Status:      status,
-		MessageSize: uint16(messageSize),
+		MessageSize: int16(messageSize),
 		Message:     message,
 	}, nil
 }
 
-func ResponseSize(messageSize uint16) uint32 {
-	return uint32(4 + 2 + 2 + 2 + messageSize)
+func ResponseSize(messageSize int16) int32 {
+	return int32(4 + 2 + 2 + 2 + messageSize)
 }
 
 // CodeTo
@@ -43,10 +43,10 @@ func (r *Response) CodeTo(data []byte) (err error) {
 		return BufferTooSmallError
 	}
 	decoder := binary.BigEndian
-	decoder.PutUint32(data[0:4], r.HeaderSize)
-	decoder.PutUint16(data[4:6], r.ReqType)
-	decoder.PutUint16(data[6:8], r.Status)
-	decoder.PutUint16(data[8:10], r.MessageSize)
+	decoder.PutUint32(data[0:4], uint32(r.HeaderSize))
+	decoder.PutUint16(data[4:6], uint16(r.ReqType))
+	decoder.PutUint16(data[6:8], uint16(r.Status))
+	decoder.PutUint16(data[8:10], uint16(r.MessageSize))
 	copy(data[10:r.MessageSize], r.Message)
 	return nil
 }
@@ -56,14 +56,14 @@ func (r *Response) CodeTo(data []byte) (err error) {
 // err InvalidHeaderSizeError if header have incorrect size
 func (r *Response) DecodeFrom(data []byte) (err error) {
 	n := len(data)
-	if uint64(n) < uint64(ResponseSize(0)) {
+	if int64(n) < int64(ResponseSize(0)) {
 		return BufferTooSmallError
 	}
 	decoder := binary.BigEndian
-	r.HeaderSize = decoder.Uint32(data[0:4])
-	r.ReqType = decoder.Uint16(data[4:6])
-	r.Status = decoder.Uint16(data[6:8])
-	r.MessageSize = decoder.Uint16(data[8:10])
+	r.HeaderSize = int32(decoder.Uint32(data[0:4]))
+	r.ReqType = int16(decoder.Uint16(data[4:6]))
+	r.Status = int16(decoder.Uint16(data[6:8]))
+	r.MessageSize = int16(decoder.Uint16(data[8:10]))
 	size := ResponseSize(r.MessageSize)
 	if uint64(size) > uint64(n) {
 		return BufferTooSmallError

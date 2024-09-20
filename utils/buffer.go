@@ -1,51 +1,53 @@
 package utils
 
-type Buffer struct {
-	Data []byte
-	load int
-}
-
 const bufQ = 2
 
 type BufferManager struct {
-	//inited atomic.Bool
 	forFile   chan *Buffer
 	forSocket chan *Buffer
 }
 
-func NewBufferManager() (m *BufferManager) {
-	return &BufferManager{
-		forFile:   make(chan *Buffer, bufQ),
-		forSocket: make(chan *Buffer, bufQ),
+type Buffer struct {
+	Data  []byte
+	Total int
+}
+
+func NewBuffer(bufSize int) (b *Buffer) {
+	return &Buffer{
+		Data:  make([]byte, bufSize),
+		Total: 0,
 	}
 }
 
-func (m *BufferManager) close() {
+func NewBufferManager(bufSize int) (m *BufferManager) {
+	m = &BufferManager{
+		forFile:   make(chan *Buffer, bufQ),
+		forSocket: make(chan *Buffer, bufQ),
+	}
+	m.PushEmptyBuffer(NewBuffer(bufSize))
+	m.PushEmptyBuffer(NewBuffer(bufSize))
+	return m
+}
+
+func (m *BufferManager) Close() {
 	close(m.forFile)
 	close(m.forSocket)
 }
 
-func (m *BufferManager) GetEmptyBuffer() *Buffer {
-	return <-m.forSocket
+func (m *BufferManager) GetEmptyBuffer() (b *Buffer, opened bool) {
+	b, opened = <-m.forSocket
+	return
 }
+
 func (m *BufferManager) PushFullBuffer(b *Buffer) {
 	m.forFile <- b
 }
 
-func (m *BufferManager) GetFullBuffer() *Buffer {
-	return <-m.forFile
+func (m *BufferManager) GetFullBuffer() (b *Buffer, opened bool) {
+	b, opened = <-m.forFile
+	return
 }
+
 func (m *BufferManager) PushEmptyBuffer(b *Buffer) {
 	m.forSocket <- b
-}
-
-func (b *Buffer) SetLoad(load int) {
-	b.load = load
-}
-
-func NewBuffer(n int) *Buffer {
-	return &Buffer{
-		Data: make([]byte, n),
-		load: 0,
-	}
 }
