@@ -51,6 +51,6 @@ func (a *ConnectionAcceptor) Launch() {
 
 		lab2.Log.Infoln("new connection from ", conn.RemoteAddr())
 		d := NewTCPDownloader(a.saveDir, a.maxInactivity, conn)
-		go d.Launch()
+		go func() { _ = d.Launch() }()
 	}
 }

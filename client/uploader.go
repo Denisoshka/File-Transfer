@@ -10,11 +10,6 @@ import (
 	"time"
 )
 
-/*type DownloaderTask struct {
-	fileUploadName string
-	filePath       string
-}*/
-
 const (
 	BufSize = 1024 * 4
 )
@@ -22,6 +17,13 @@ const (
 type TCPDownloader struct {
 	addr          *net.TCPAddr
 	maxInactivity time.Duration
+}
+
+func NewTCPUploader(addr *net.TCPAddr, maxInactivity time.Duration) *TCPDownloader {
+	return &TCPDownloader{
+		addr:          addr,
+		maxInactivity: maxInactivity,
+	}
 }
 
 func (d *TCPDownloader) Launch(filePath string, uploadName string) (err error) {
@@ -47,21 +49,21 @@ func (d *TCPDownloader) Launch(filePath string, uploadName string) (err error) {
 	}
 
 	bManager := utils.NewBufferManager(BufSize)
-	fileReaderErrChan := make(chan error, 1)
-	defer bManager.Close()
-
-	go func() { _ = fileReader(bManager, file, fileReaderErrChan) }()
+	var errPtr *error
+	go func() { *errPtr = fileReader(bManager, file) }()
 	for {
 		buf, opened := bManager.GetFullBuffer()
 		if !opened {
+			err = *errPtr
 			break
 		}
 		_, err = utils.ConnWriteN(conn, buf.Data, buf.MaxCapacity)
 		if err != nil {
-			bManager.Close()
 			break
 		}
 	}
+	bManager.Close()
+
 	return d.onUploadEnd(conn)
 }
 
@@ -85,19 +87,12 @@ func sendInitial(conn *net.TCPConn, stat os.FileInfo,
 	return nil
 }
 
-func fileReader(bManager *utils.BufferManager, file *os.File,
-	errChan chan<- error) (err error) {
+func fileReader(bManager *utils.BufferManager, file *os.File) (err error) {
 	defer bManager.Close()
-	defer func(funcErr error) {
-		if errChan != nil {
-			errChan <- funcErr
-		}
-	}(err)
-
 	for {
 		buf, opened := bManager.GetEmptyBuffer()
 		if !opened {
-			return
+			return nil
 		}
 		var n int
 		n, err = utils.FileReadN(file, buf.Data, buf.MaxCapacity)
@@ -111,7 +106,7 @@ func fileReader(bManager *utils.BufferManager, file *os.File,
 		}
 		bManager.PushFullBuffer(buf)
 	}
-	return
+	return err
 }
 
 func (d *TCPDownloader) readResponse(conn *net.TCPConn) (r *requests.Response, err error) {

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"net"
+	"time"
 )
 
 var (
@@ -12,28 +13,38 @@ var (
 	DirrectoryNotSpecified = errors.New("directory not specified")
 )
 
-func ParseFlags() (host string, port int, downloadDir string, err error) {
+func ParseFlags(defaultInactivity time.Duration,
+	defaultSpeedTrackDelay time.Duration) (host string, port int,
+	downloadDir string,
+	maxInactivity time.Duration, speedTrackDelay time.Duration, err error) {
 	flag.StringVar(&host, "address", "", "Server address")
 	flag.IntVar(&port, "port", -1, "Server port")
 	flag.StringVar(&downloadDir, "downloaddir", "", "Download directory path")
+	flag.DurationVar(
+		&maxInactivity, "inactivitytimeout", defaultInactivity,
+		"Max connection inactivity time",
+	)
+	flag.DurationVar(
+		&speedTrackDelay, "speedtrackdelay",
+		defaultSpeedTrackDelay, "Speed track delay",
+	)
 	flag.Parse()
 
 	err = IsCorrectPort(port)
 	if err != nil {
-		return "", 0, "", err
+		return "", 0, "", 0, 0, err
 	}
 
 	err = IsCorrectAddress(host)
 	if err != nil {
-		return "", 0, "", err
+		return "", 0, "", 0, 0, err
 	}
 
 	err = IsCorrectDir(downloadDir)
 	if err != nil {
-		return "", 0, "", err
+		return "", 0, "", 0, 0, err
 	}
-
-	return host, port, downloadDir, nil
+	return
 }
 
 func IsCorrectAddress(addr string) (err error) {

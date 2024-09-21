@@ -1,19 +1,15 @@
 package server_interfaces
 
 import (
+	"lab2/server"
 	"net"
 	"time"
 )
 
-type SpeedInfo struct {
-	LastUpdate time.Time
-	RecordedQ  int
-}
-
 type AbstractSpeedTracker interface {
 	NewSpeedTracker(trackDelay time.Duration) *AbstractSpeedTracker
-	AddConnection(conn *net.Conn) (data *SpeedInfo)
+	AddConnection(conn *net.Conn) (data *server.ConnectionInfo)
 	DeleteConnection(conn *net.Conn)
-	GetSpeedInfo(conn *net.Conn) *SpeedInfo
+	GetSpeedInfo(conn *net.Conn) *server.ConnectionInfo
 	Launch()
 }
