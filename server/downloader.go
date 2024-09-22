@@ -122,7 +122,7 @@ func (u *TCPDownloader) fetchFile(dataSize int64, file *os.File) (total int64, e
 		bufManager.PushForConsumer(buf)
 	}
 
-	err = joinErrors(funcErr, err)
+	err = errors.Join(funcErr, err)
 	connInfo.MarkAsExpired()
 	bufManager.CloseForConsumer()
 	LOG.Infoln("receive:", total, "from", tag, "with err", err)

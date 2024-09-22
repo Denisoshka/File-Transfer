@@ -52,11 +52,22 @@ func (d *TCPDownloader) Launch(filePath string, uploadName string) (err error) {
 	fmt.Println("send initial request for upload ", stat.Size(), " bytes")
 
 	err = d.uploadFile(file, conn)
-	if err != nil {
-		return err
-	}
+	err2 := d.handleResponse(conn)
 
-	return d.onUploadEnd(conn)
+	return errors.Join(err, err2)
+}
+
+func (d *TCPDownloader) handleResponse(conn *net.TCPConn) (err error) {
+	req, uploadEndErr := d.onUploadEnd(conn)
+	if uploadEndErr != nil {
+		return errors.Join(err, uploadEndErr)
+	}
+	isSuccess := req.Status == requests.SuccessResponse
+	msg := fmt.Sprint(
+		"server response {status: ", isSuccess, " message: ", req.Message, "}",
+	)
+	fmt.Println(msg)
+	return nil
 }
 
 func (d *TCPDownloader) uploadFile(file *os.File,
@@ -146,16 +157,10 @@ func (d *TCPDownloader) readResponse(conn *net.TCPConn) (req *requests.Response,
 	return req, nil
 }
 
-func (d *TCPDownloader) onUploadEnd(conn *net.TCPConn) (err error) {
-	var req *requests.Response
+func (d *TCPDownloader) onUploadEnd(conn *net.TCPConn) (req *requests.Response, err error) {
 	req, err = d.readResponse(conn)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	isSuccess := req.Status == requests.SuccessResponse
-	fmt.Println(
-		"upload finished with success:", isSuccess,
-		"message from server", req.Message,
-	)
-	return nil
+	return req, nil
 }

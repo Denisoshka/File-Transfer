@@ -22,6 +22,11 @@ func (f *CustomTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	return []byte(message), nil
 }
 
+const (
+	DirPerm  = 0666
+	FilePerm = 0666
+)
+
 func init() {
 	file, err := os.OpenFile(
 		"server.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND,
@@ -37,18 +42,13 @@ func init() {
 	}
 }
 
-const (
-	DirPerm  = 0766
-	FilePerm = 0666
-)
-
 func createUploadsDir(dirPath string) error {
 	return os.MkdirAll(dirPath, DirPerm)
 }
 
 func prepareFile(filePath string, fileSize int64) (file *os.File,
 	fileExists bool, err error) {
-	file, err = os.OpenFile(filePath, os.O_CREATE|os.O_RDWR, FilePerm)
+	file, err = os.OpenFile(filePath, os.O_CREATE|os.O_EXCL|os.O_RDWR, FilePerm)
 	if err != nil {
 		if os.IsExist(err) {
 			return nil, true, err
