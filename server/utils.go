@@ -23,7 +23,10 @@ func (f *CustomTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 }
 
 func init() {
-	file, err := os.OpenFile("app.LOG", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	file, err := os.OpenFile(
+		"server.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND,
+		0666,
+	)
 	if err != nil {
 		panic(err)
 	}

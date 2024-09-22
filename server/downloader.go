@@ -94,9 +94,8 @@ func (u *TCPDownloader) fetchFile(dataSize int64, file *os.File) (total int64, e
 	}()
 
 	total = int64(0)
-	defer bufManager.CloseConsumer()
 	for total < dataSize {
-		buf, open := bufManager.GetForPublisher()
+		buf, open := bufManager.GetForConsumer()
 		if !open {
 			break
 		}
@@ -106,28 +105,29 @@ func (u *TCPDownloader) fetchFile(dataSize int64, file *os.File) (total int64, e
 			u.conn, buf.Data, buf.MaxCapacity, u.maxConnInactivityDelay,
 		)
 		LOG.Debugln("receive: ", n, " from ", tag)
-		//speedInfo.UpdateSpeed(uint64(n))
 		buf.CurCapacity = n
 		if err != nil {
-			/*if err == io.EOF {
-				bufManager.PushForPublisher(buf)
-				break
-			}*/
-			return total, err
+			break
 		}
 
-		bufManager.PushForPublisher(buf)
+		bufManager.PushForConsumer(buf)
 		total += int64(n)
 	}
+	bufManager.CloseForConsumer()
 
 	if funcErr != nil {
-		err = funcErr
+		if err != nil {
+			errors.Join(err, funcErr)
+		} else {
+			err = funcErr
+		}
 	}
+
 	return total, err
 }
 
 func fileWriter(file *os.File, bufManager *utils.BufferManager) (err error) {
-	defer func(bufManager *utils.BufferManager) { bufManager.ClosePublisher() }(bufManager)
+	defer func(bufManager *utils.BufferManager) { bufManager.CloseForPublisher() }(bufManager)
 	for {
 		buf, opened := bufManager.GetForPublisher()
 		if !opened {
@@ -141,33 +141,6 @@ func fileWriter(file *os.File, bufManager *utils.BufferManager) (err error) {
 		bufManager.PushForPublisher(buf)
 	}
 }
-
-/*
-func (u *TCPDownloader) handleInitialReq() (req *requests.Initial,
-	noticeConnection bool, err error) {
-
-	//maxInitReqSize := requests2.InitialSize(requests2.MaxFileNameSize)
-	if initialReqSize > maxInitReqSize {
-		return nil, true, requests2.IncorrectRequestSize
-	}
-
-	buf := make([]byte, initialReqSize)
-	initialReq := &requests2.Initial{}
-	_, err = utils.ConnReadN(
-		u.conn, buf, int(initialReqSize)-4, u.maxConnInactivityDelay,
-	)
-	if err != nil {
-		return nil, false, err
-	}
-
-	err = initialReq.DecodeFrom(buf)
-	if err != nil {
-		return nil, true, err
-	}
-
-	return initialReq, false, nil
-}
-*/
 
 func (u *TCPDownloader) noticeDownloadSuccessful(message string) (err error) {
 	return notice(message, requests.SuccessResponse, u.conn)

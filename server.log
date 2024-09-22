@@ -1,0 +1,10 @@
+2024-09-22 23:13:42.540  INFO start server with args
+	 downloadDir  ./xyi 
+	inactivityTimeout:  1m40s 
+	addr 127.0.0.1:9898
+2024-09-22 23:13:50.022  INFO new connection from  127.0.0.1:50182
+2024-09-22 23:13:50.022 DEBUG &{23 0 149628 7 xyi.pdf}
+2024-09-22 23:14:40.001 DEBUG receive:  1024  from  127.0.0.1:50182
+2024-09-22 23:14:40.001 DEBUG receive:  1024  from  127.0.0.1:50182
+2024-09-22 23:14:40.001 DEBUG receive:  1024  from  127.0.0.1:50182
+2024-09-22 23:14:40.001 DEBUG receive:  1024  from  127.0.0.1:50182

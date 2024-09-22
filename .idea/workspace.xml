@@ -6,24 +6,10 @@
   <component name="ChangeListManager">
     <list default="true" id="e2ab0c8d-7832-4d0f-884f-81eb25a887f2" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/main.go" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/client/uploader.go" beforeDir="false" afterPath="$PROJECT_DIR$/client/uploader.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/log.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/requests/initial.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/requests/initial.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requests/response.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/requests/response.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requests/shared.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/requests/shared.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server-interfaces/abstract-accepter.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/server-interfaces/abstract-speed-tracker.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server-interfaces/abstract-connection-accepter.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/server-interfaces/abstract-connection-accepter.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server-interfaces/abstract-uploader.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/server-interfaces/abstract-uploader.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/accepter.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/accepter.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/console.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/console.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/server/downloader.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/downloader.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/main.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/speed-tracker.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/speed-tracker.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/utils.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/buffer-manager.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/buffer-manager.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/utils.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -123,11 +109,6 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/client/uploader.go</url>
-          <line>51</line>
-          <option name="timeStamp" value="22" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/server/downloader.go</url>
           <line>59</line>
           <option name="timeStamp" value="27" />
@@ -154,22 +135,17 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/client/uploader.go</url>
-          <line>38</line>
+          <line>37</line>
           <option name="timeStamp" value="34" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/client/uploader.go</url>
-          <line>67</line>
-          <option name="timeStamp" value="35" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/client/uploader.go</url>
-          <line>42</line>
+          <line>41</line>
           <option name="timeStamp" value="36" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/client/uploader.go</url>
-          <line>48</line>
+          <line>47</line>
           <option name="timeStamp" value="37" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
@@ -184,13 +160,8 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/client/uploader.go</url>
-          <line>93</line>
+          <line>102</line>
           <option name="timeStamp" value="42" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/client/uploader.go</url>
-          <line>56</line>
-          <option name="timeStamp" value="43" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

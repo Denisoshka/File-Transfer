@@ -1,7 +1,7 @@
 package client
 
 import (
-	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"lab2/utils"
@@ -49,23 +49,43 @@ func (d *TCPDownloader) Launch(filePath string, uploadName string) (err error) {
 		return err
 	}
 
+	err = d.uploadFile(file, conn)
+	if err != nil {
+		return err
+	}
+
+	return d.onUploadEnd(conn)
+}
+
+func (d *TCPDownloader) uploadFile(file *os.File,
+	conn *net.TCPConn) (err error) {
 	bManager := utils.NewBufferManager(BufSize)
-	var errPtr *error
-	go func() { *errPtr = fileReader(bManager, file) }()
+	var readerErr error
+	go func() { readerErr = fileReader(bManager, file) }()
 	for {
-		buf, opened := bManager.GetForConsumer()
+		buf, opened := bManager.GetForPublisher()
 		if !opened {
-			err = *errPtr
+			err = readerErr
 			break
 		}
+
 		_, err = utils.ConnWriteN(conn, buf.Data, buf.MaxCapacity)
 		if err != nil {
 			break
 		}
-		bManager.PushForConsumer(buf)
+		bManager.PushForPublisher(buf)
+	}
+	bManager.CloseForPublisher()
+
+	if readerErr != nil {
+		if err != nil {
+			errors.Join(err, readerErr)
+		} else {
+			err = readerErr
+		}
 	}
 
-	return d.onUploadEnd(conn)
+	return err
 }
 
 func sendInitial(conn *net.TCPConn, stat os.FileInfo,
@@ -89,11 +109,10 @@ func sendInitial(conn *net.TCPConn, stat os.FileInfo,
 }
 
 func fileReader(bManager *utils.BufferManager, file *os.File) (err error) {
-	defer bManager.CloseConsumer()
 	for {
 		buf, opened := bManager.GetForConsumer()
 		if !opened {
-			return nil
+			break
 		}
 		var n int
 		n, err = utils.FileReadN(file, buf.Data, buf.MaxCapacity)
@@ -107,29 +126,20 @@ func fileReader(bManager *utils.BufferManager, file *os.File) (err error) {
 		}
 		bManager.PushForConsumer(buf)
 	}
+	bManager.CloseForConsumer()
 	return err
 }
 
-func (d *TCPDownloader) readResponse(conn *net.TCPConn) (r *requests.Response, err error) {
-	reqSizeBuf := make([]byte, 4)
-	_, err = utils.ConnReadN(conn, reqSizeBuf, 4, d.maxInactivity)
+func (d *TCPDownloader) readResponse(conn *net.TCPConn) (req *requests.Response, err error) {
+	req = &requests.Response{}
+	err = utils.ReadRequest(
+		conn, d.maxInactivity, req,
+		int64(requests.ResponseSize(requests.MaxMessageSize)), nil,
+	)
 	if err != nil {
 		return nil, err
 	}
-	c := binary.BigEndian
-	reqSize := c.Uint32(reqSizeBuf)
-	buf := make([]byte, reqSize)
-	c.PutUint32(buf[0:4], reqSize)
-	_, err = utils.ConnReadN(conn, buf, int(reqSize), d.maxInactivity)
-	if err != nil {
-		return nil, err
-	}
-	r = &requests.Response{}
-	err = r.DecodeFrom(buf)
-	if err != nil {
-		return nil, err
-	}
-	return r, nil
+	return req, nil
 }
 
 func (d *TCPDownloader) onUploadEnd(conn *net.TCPConn) (err error) {

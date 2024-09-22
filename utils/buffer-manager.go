@@ -4,7 +4,7 @@ const bufQ = 2
 
 type BufferManager struct {
 	consumer        chan *Buffer
-	recipient       chan *Buffer
+	publisher       chan *Buffer
 	forFileClosed   int8
 	forSocketClosed int8
 }
@@ -26,23 +26,23 @@ func NewBuffer(bufSize int) (b *Buffer) {
 func NewBufferManager(bufSize int) (m *BufferManager) {
 	m = &BufferManager{
 		consumer:  make(chan *Buffer, bufQ),
-		recipient: make(chan *Buffer, bufQ),
+		publisher: make(chan *Buffer, bufQ),
 	}
 	m.PushForPublisher(NewBuffer(bufSize))
 	m.PushForPublisher(NewBuffer(bufSize))
 	return m
 }
 
-func (m *BufferManager) CloseConsumer() {
+func (m *BufferManager) CloseForConsumer() {
+	close(m.publisher)
+}
+
+func (m *BufferManager) CloseForPublisher() {
 	close(m.consumer)
 }
 
-func (m *BufferManager) ClosePublisher() {
-	close(m.recipient)
-}
-
 func (m *BufferManager) GetForPublisher() (b *Buffer, opened bool) {
-	b, opened = <-m.recipient
+	b, opened = <-m.publisher
 	return
 }
 
@@ -56,5 +56,5 @@ func (m *BufferManager) GetForConsumer() (b *Buffer, opened bool) {
 }
 
 func (m *BufferManager) PushForConsumer(b *Buffer) {
-	m.recipient <- b
+	m.publisher <- b
 }
