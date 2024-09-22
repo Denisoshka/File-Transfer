@@ -9,10 +9,11 @@ import (
 
 const DefaultInactivity = time.Second * 100
 const DefaultSpeedTrackDelay = time.Second * 3
+const DefaultDownloadDir = "./downloads"
 
 func Start() {
 	host, port, downloadDir, inactivityTimeout, speedTrackDelay, err := ParseFlags(
-		DefaultInactivity, DefaultSpeedTrackDelay,
+		DefaultInactivity, DefaultSpeedTrackDelay, DefaultDownloadDir,
 	)
 	if err != nil {
 		flag.PrintDefaults()

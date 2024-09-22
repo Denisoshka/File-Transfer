@@ -14,12 +14,15 @@ var (
 )
 
 func ParseFlags(defaultInactivity time.Duration,
-	defaultSpeedTrackDelay time.Duration) (host string, port int,
+	defaultSpeedTrackDelay time.Duration, defaultDownloadDir string) (
+	host string, port int,
 	downloadDir string,
 	maxInactivity time.Duration, speedTrackDelay time.Duration, err error) {
 	flag.StringVar(&host, "address", "", "Start address")
 	flag.IntVar(&port, "port", -1, "Start port")
-	flag.StringVar(&downloadDir, "downloaddir", "", "Download directory path")
+	flag.StringVar(
+		&downloadDir, "downloaddir", defaultDownloadDir, "Download directory path",
+	)
 	flag.DurationVar(
 		&maxInactivity, "inactivitytimeout", defaultInactivity,
 		"Max connection inactivity time",
