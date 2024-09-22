@@ -54,7 +54,7 @@ func (u *TCPDownloader) Launch() (err error) {
 	}
 
 	filePath := path.Join(u.dirPath, req.Name)
-	file, fileExists, err := utils.PrepareFile(filePath, req.DataSize)
+	file, fileExists, err := prepareFile(filePath, req.DataSize)
 	if err != nil {
 		if fileExists {
 			_ = u.noticeDownloadFailed("this file already exists")
@@ -69,13 +69,18 @@ func (u *TCPDownloader) Launch() (err error) {
 	total, err := u.fetchFile(req.DataSize, file)
 	var netErr net.Error
 	if errors.As(err, &netErr) && netErr.Timeout() {
-		//lab2.Log.Errorln(u.conn, err)
+		LOG.Info(u.conn, err)
 		err = u.noticeDownloadFailed(err.Error())
 		return
 	}
 	if total == req.DataSize {
-		err = u.noticeDownloadSuccessful(fmt.Sprint("recorded ", total, " bytes"))
-		//lab2.Log.Debugln(u.conn, err)
+		msg := fmt.Sprint("recorded ", total, " bytes")
+		err = u.noticeDownloadSuccessful(msg)
+		if err != nil {
+			LOG.Errorln(u.conn, err)
+		} else {
+			LOG.Info(u.conn, err)
+		}
 		return
 	}
 	err = u.noticeDownloadFailed(fmt.Sprint("recorded ", total, " bytes"))
@@ -89,29 +94,33 @@ func (u *TCPDownloader) fetchFile(dataSize int64, file *os.File) (total int64, e
 	//speedInfo := u.tracker.AddConnection(tag)
 	//defer func(bufManager *utils.BufferManager) { bufManager.Close() }(bufManager)
 	var funcErr error
-	go func() {
-		funcErr = fileWriter(file, bufManager)
-	}()
+	go func() { funcErr = fileWriter(file, bufManager) }()
 
 	total = int64(0)
-	for total < dataSize {
+	for received := 0; total < dataSize; {
 		buf, open := bufManager.GetForConsumer()
 		if !open {
 			break
 		}
 
-		var n int
-		n, err = utils.ConnReadN(
-			u.conn, buf.Data, buf.MaxCapacity, u.maxConnInactivityDelay,
+		remains := dataSize - total
+		var toRead int
+		if remains > int64(buf.MaxCapacity()) {
+			toRead = buf.MaxCapacity()
+		} else {
+			toRead = int(remains)
+		}
+
+		received, err = utils.ConnReadN(
+			u.conn, buf.Data(), toRead, u.maxConnInactivityDelay,
 		)
-		LOG.Debugln("receive: ", n, " from ", tag)
-		buf.CurCapacity = n
+		total += int64(received)
 		if err != nil {
 			break
 		}
+		LOG.Debugln("receive: ", received, " total ", total, " from ", tag)
 
 		bufManager.PushForConsumer(buf)
-		total += int64(n)
 	}
 	bufManager.CloseForConsumer()
 
@@ -133,7 +142,7 @@ func fileWriter(file *os.File, bufManager *utils.BufferManager) (err error) {
 		if !opened {
 			return nil
 		}
-		_, err = utils.FileWriteN(file, buf.Data, buf.MaxCapacity)
+		_, err = utils.FileWriteN(file, buf.Data(), buf.MaxCapacity())
 		if err != nil {
 			LOG.Errorln("file: ", file.Name(), " error occurred ", err)
 			return err

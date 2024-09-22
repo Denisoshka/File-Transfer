@@ -3,7 +3,6 @@ package server
 import (
 	"errors"
 	serverinterfaces "lab2/server/server-interfaces"
-	"lab2/utils"
 	"net"
 	"syscall"
 	"time"
@@ -30,7 +29,7 @@ func NewConnectionAcceptor(saveDir string,
 }
 
 func (a *ConnectionAcceptor) Launch() {
-	err := utils.CreateUploadsDir(a.saveDir)
+	err := createUploadsDir(a.saveDir)
 	if err != nil {
 		panic(err)
 	}

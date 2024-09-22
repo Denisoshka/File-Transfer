@@ -38,16 +38,18 @@ func (d *TCPDownloader) Launch(filePath string, uploadName string) (err error) {
 	if err != nil {
 		return err
 	}
+	defer func(file *os.File) { _ = file.Close() }(file)
+
 	stat, err := file.Stat()
 	if err != nil {
 		return err
 	}
-	defer func(file *os.File) { _ = file.Close() }(file)
 
 	err = sendInitial(conn, stat, uploadName)
 	if err != nil {
 		return err
 	}
+	fmt.Println("send initial request for upload ", stat.Size(), " bytes")
 
 	err = d.uploadFile(file, conn)
 	if err != nil {
@@ -62,14 +64,16 @@ func (d *TCPDownloader) uploadFile(file *os.File,
 	bManager := utils.NewBufferManager(BufSize)
 	var readerErr error
 	go func() { readerErr = fileReader(bManager, file) }()
-	for {
+	total := int64(0)
+	for q := 0; ; total += int64(q) {
 		buf, opened := bManager.GetForPublisher()
 		if !opened {
 			err = readerErr
 			break
 		}
 
-		_, err = utils.ConnWriteN(conn, buf.Data, buf.MaxCapacity)
+		q, err = utils.ConnWriteN(conn, buf.Data(), buf.CurCapacity())
+		//fmt.Println("send ", q, " bytes")
 		if err != nil {
 			break
 		}
@@ -115,8 +119,8 @@ func fileReader(bManager *utils.BufferManager, file *os.File) (err error) {
 			break
 		}
 		var n int
-		n, err = utils.FileReadN(file, buf.Data, buf.MaxCapacity)
-		buf.CurCapacity = n
+		n, err = utils.FileReadN(file, buf.Data(), buf.MaxCapacity())
+		buf.SetCurCapacity(n)
 		if err != nil {
 			if err == io.EOF {
 				bManager.PushForConsumer(buf)
@@ -148,10 +152,10 @@ func (d *TCPDownloader) onUploadEnd(conn *net.TCPConn) (err error) {
 	if err != nil {
 		return err
 	}
-	isSuccess := req.ReqType == requests.SuccessResponse
+	isSuccess := req.Status == requests.SuccessResponse
 	fmt.Println(
-		"upload finished with success:", isSuccess, " and message ",
-		req.Message,
+		"upload finished with success:", isSuccess,
+		"message from server", req.Message,
 	)
 	return nil
 }

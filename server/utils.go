@@ -36,3 +36,34 @@ func init() {
 		Formatter: &CustomTextFormatter{},
 	}
 }
+
+const (
+	DirPerm  = 0766
+	FilePerm = 0666
+)
+
+func createUploadsDir(dirPath string) error {
+	return os.MkdirAll(dirPath, DirPerm)
+}
+
+func prepareFile(filePath string, fileSize int64) (file *os.File,
+	fileExists bool, err error) {
+	file, err = os.OpenFile(filePath, os.O_CREATE|os.O_RDWR, FilePerm)
+	if err != nil {
+		if os.IsExist(err) {
+			return nil, true, err
+		}
+		return nil, false, err
+	}
+	err = file.Truncate(0)
+	if err != nil {
+		_ = file.Close()
+		return nil, false, err
+	}
+	err = file.Truncate(fileSize)
+	if err != nil {
+		_ = file.Close()
+		return nil, false, err
+	}
+	return file, false, nil
+}

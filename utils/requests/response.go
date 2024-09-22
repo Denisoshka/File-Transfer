@@ -54,7 +54,7 @@ func (r *Response) CodeTo(data []byte) (err error) {
 	if r.MessageSize > MaxMessageSize {
 		return MessageTooLargeError
 	}
-	copy(data[10:r.MessageSize], r.Message)
+	copy(data[10:10+r.MessageSize], r.Message)
 	return nil
 }
 

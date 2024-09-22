@@ -10,16 +10,32 @@ type BufferManager struct {
 }
 
 type Buffer struct {
-	Data        []byte
-	MaxCapacity int
-	CurCapacity int
+	data        []byte
+	maxCapacity int
+	curCapacity int
+}
+
+func (b *Buffer) CurCapacity() int {
+	return b.curCapacity
+}
+
+func (b *Buffer) SetCurCapacity(curCapacity int) {
+	b.curCapacity = curCapacity
+}
+
+func (b *Buffer) Data() []byte {
+	return b.data
+}
+
+func (b *Buffer) MaxCapacity() int {
+	return b.maxCapacity
 }
 
 func NewBuffer(bufSize int) (b *Buffer) {
 	return &Buffer{
-		Data:        make([]byte, bufSize),
-		MaxCapacity: bufSize,
-		CurCapacity: 0,
+		data:        make([]byte, bufSize),
+		maxCapacity: bufSize,
+		curCapacity: 0,
 	}
 }
 

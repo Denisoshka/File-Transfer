@@ -8,47 +8,17 @@ import (
 	"time"
 )
 
-const (
-	DirPerm  = 0766
-	FilePerm = 0766
-)
-
-func CreateUploadsDir(dirPath string) error {
-	return os.MkdirAll(dirPath, DirPerm)
-}
-
-func PrepareFile(filePath string, fileSize int64) (file *os.File,
-	fileExists bool, err error) {
-	file, err = os.OpenFile(filePath, os.O_CREATE|os.O_EXCL|os.O_RDWR, FilePerm)
-	if err != nil {
-		if os.IsExist(err) {
-			return nil, true, err
-		}
-		return nil, false, err
-	}
-	err = file.Truncate(0)
-	if err != nil {
-		_ = file.Close()
-		return nil, false, err
-	}
-	err = file.Truncate(fileSize)
-	if err != nil {
-		_ = file.Close()
-		return nil, false, err
-	}
-	return file, false, nil
-}
-
 func ConnReadN(conn net.Conn, data []byte, n int,
 	maxSocketInactivity time.Duration) (total int, err error) {
 	total = 0
-	for start := 0; total < n; total += start {
+	for start := 0; total < n; {
 		err = conn.SetReadDeadline(time.Now().Add(maxSocketInactivity))
 		if err != nil {
 			break
 		}
 
 		start, err = conn.Read(data[total:n])
+		total += start
 		if err != nil {
 			break
 		}
