@@ -1,34 +1,109 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="AutoImportSettings">
-    <option name="autoReloadType" value="SELECTIVE" />
+    <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e2ab0c8d-7832-4d0f-884f-81eb25a887f2" name="Changes" comment="" />
+    <list default="true" id="e2ab0c8d-7832-4d0f-884f-81eb25a887f2" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/main.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/uploader.go" beforeDir="false" afterPath="$PROJECT_DIR$/client/uploader.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/log.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/requests/initial.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/requests/initial.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requests/response.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/requests/response.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requests/shared.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/requests/shared.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server-interfaces/abstract-accepter.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/server-interfaces/abstract-speed-tracker.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server-interfaces/abstract-connection-accepter.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/server-interfaces/abstract-connection-accepter.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server-interfaces/abstract-uploader.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/server-interfaces/abstract-uploader.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/accepter.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/accepter.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/console.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/console.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/downloader.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/downloader.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/main.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/speed-tracker.go" beforeDir="false" afterPath="$PROJECT_DIR$/server/speed-tracker.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/buffer-manager.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/buffer-manager.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/utils.go" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Go File" />
+      </list>
+    </option>
+  </component>
   <component name="GOROOT" url="file://$USER_HOME$/sdk/go1.23.0" />
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 8
-}]]></component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 8
+}</component>
   <component name="ProjectId" id="2li4aEwdLu74EKO6MWpndIiCiZ0" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="1" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.go.migrated.go.modules.settings": "true",
-    "go.import.settings.migrated": "true",
-    "last_opened_file_path": "/home/denis",
-    "nodejs_package_manager_path": "npm",
-    "onboarding.tips.debug.path": "/home/denis/GolandProjects/seti/lab2/main.go"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultGoTemplateProperty&quot;: &quot;Go File&quot;,
+    &quot;Go Build.go build lab2.executor&quot;: &quot;Run&quot;,
+    &quot;Go Build.go build lab2/client-start.executor&quot;: &quot;Debug&quot;,
+    &quot;Go Build.go build lab2/server-start.executor&quot;: &quot;Debug&quot;,
+    &quot;Go Build.go build main.go.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.migrated.go.modules.settings&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.modules.go.list.on.any.changes.was.set&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/denis/GolandProjects/seti/lab1&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;onboarding.tips.debug.path&quot;: &quot;/home/denis/GolandProjects/seti/lab2/main.go&quot;
   }
-}]]></component>
+}</component>
+  <component name="RunManager" selected="Go Build.go build lab2/client-start">
+    <configuration name="go build lab2/client-start" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
+      <module name="lab2" />
+      <working_directory value="$PROJECT_DIR$" />
+      <parameters value="-filepath='$USER_HOME$/Downloads/OM HA Cache Design.pdf' -address=localhost -port=9898 -name=xyi.pdf" />
+      <kind value="PACKAGE" />
+      <package value="lab2/client-start" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$/client-start/main.go" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go build lab2/server-start" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
+      <module name="lab2" />
+      <working_directory value="$PROJECT_DIR$" />
+      <parameters value="-address=localhost -port=9898 -downloaddir=./xyi" />
+      <kind value="PACKAGE" />
+      <package value="lab2/server-start" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$/server-start/main.go" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Go Build.go build lab2/client-start" />
+      <item itemvalue="Go Build.go build lab2/server-start" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Go Build.go build lab2/client-start" />
+        <item itemvalue="Go Build.go build lab2/server-start" />
+      </list>
+    </recent_temporary>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -48,9 +123,74 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/main.go</url>
-          <line>19</line>
-          <option name="timeStamp" value="1" />
+          <url>file://$PROJECT_DIR$/client/uploader.go</url>
+          <line>51</line>
+          <option name="timeStamp" value="22" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/server/downloader.go</url>
+          <line>59</line>
+          <option name="timeStamp" value="27" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/server/downloader.go</url>
+          <line>61</line>
+          <option name="timeStamp" value="28" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/server/downloader.go</url>
+          <line>72</line>
+          <option name="timeStamp" value="29" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/server/downloader.go</url>
+          <line>78</line>
+          <option name="timeStamp" value="30" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/server/downloader.go</url>
+          <line>82</line>
+          <option name="timeStamp" value="31" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/client/uploader.go</url>
+          <line>38</line>
+          <option name="timeStamp" value="34" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/client/uploader.go</url>
+          <line>67</line>
+          <option name="timeStamp" value="35" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/client/uploader.go</url>
+          <line>42</line>
+          <option name="timeStamp" value="36" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/client/uploader.go</url>
+          <line>48</line>
+          <option name="timeStamp" value="37" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/server/downloader.go</url>
+          <line>57</line>
+          <option name="timeStamp" value="38" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/server/downloader.go</url>
+          <line>97</line>
+          <option name="timeStamp" value="41" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/client/uploader.go</url>
+          <line>93</line>
+          <option name="timeStamp" value="42" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/client/uploader.go</url>
+          <line>56</line>
+          <option name="timeStamp" value="43" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

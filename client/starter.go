@@ -1,6 +1,7 @@
 package client
 
 import (
+	"flag"
 	"fmt"
 	"net"
 	"strconv"
@@ -11,9 +12,10 @@ var (
 	maxConnectionDelay = time.Hour * 356
 )
 
-func main() {
+func Start() {
 	host, port, filePath, fileName, err := ParseFlags()
 	if err != nil {
+		flag.PrintDefaults()
 		fmt.Println(err)
 		return
 	}

@@ -63,7 +63,8 @@ func (r *Response) CodeTo(data []byte) (err error) {
 // err InvalidHeaderSizeError if header have incorrect size
 func (r *Response) DecodeFrom(data []byte) (err error) {
 	n := len(data)
-	if int64(n) < int64(ResponseSize(0)) {
+	minSize := int64(ResponseSize(0))
+	if int64(n) < minSize {
 		return BufferTooSmallError
 	}
 	decoder := binary.BigEndian

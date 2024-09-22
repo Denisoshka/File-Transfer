@@ -3,6 +3,7 @@ package requests
 import "encoding/binary"
 
 type Initial struct {
+	//AbstractRequest
 	HeaderSize int32
 	ReqType    int16
 	DataSize   int64
@@ -36,7 +37,7 @@ func (r *Initial) Size() int32 {
 }
 
 func InitialSize(nameSize int16) int32 {
-	return int32(4 + 2 + 8 + 2 + 2 + nameSize)
+	return int32(4 + 2 + 8 + 2 + nameSize)
 }
 
 func (r *Initial) CodeTo(data []byte) (err error) {
@@ -62,7 +63,8 @@ func (r *Initial) CodeTo(data []byte) (err error) {
 
 func (r *Initial) DecodeFrom(data []byte) (err error) {
 	n := len(data)
-	if uint64(n) < uint64(InitialSize(0)) {
+	minSize := uint64(InitialSize(0))
+	if uint64(n) < minSize {
 		return BufferTooSmallError
 	}
 	dc := binary.BigEndian

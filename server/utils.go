@@ -1,12 +1,13 @@
-package lab2
+package server
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"os"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 )
+
+var LOG *logrus.Logger
 
 type CustomTextFormatter struct{}
 
@@ -21,8 +22,14 @@ func (f *CustomTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	return []byte(message), nil
 }
 
-var Log = &logrus.Logger{
-	Out:       os.Stdout,
-	Level:     logrus.InfoLevel,
-	Formatter: &CustomTextFormatter{},
+func init() {
+	file, err := os.OpenFile("app.LOG", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		panic(err)
+	}
+	LOG = &logrus.Logger{
+		Out:       file,
+		Level:     logrus.TraceLevel,
+		Formatter: &CustomTextFormatter{},
+	}
 }

@@ -2,9 +2,10 @@ package client
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
-	"lab2/requests"
 	"lab2/utils"
+	"lab2/utils/requests"
 	"net"
 	"os"
 	"time"
@@ -52,7 +53,7 @@ func (d *TCPDownloader) Launch(filePath string, uploadName string) (err error) {
 	var errPtr *error
 	go func() { *errPtr = fileReader(bManager, file) }()
 	for {
-		buf, opened := bManager.GetFullBuffer()
+		buf, opened := bManager.GetForConsumer()
 		if !opened {
 			err = *errPtr
 			break
@@ -61,8 +62,8 @@ func (d *TCPDownloader) Launch(filePath string, uploadName string) (err error) {
 		if err != nil {
 			break
 		}
+		bManager.PushForConsumer(buf)
 	}
-	bManager.Close()
 
 	return d.onUploadEnd(conn)
 }
@@ -88,9 +89,9 @@ func sendInitial(conn *net.TCPConn, stat os.FileInfo,
 }
 
 func fileReader(bManager *utils.BufferManager, file *os.File) (err error) {
-	defer bManager.Close()
+	defer bManager.CloseConsumer()
 	for {
-		buf, opened := bManager.GetEmptyBuffer()
+		buf, opened := bManager.GetForConsumer()
 		if !opened {
 			return nil
 		}
@@ -99,12 +100,12 @@ func fileReader(bManager *utils.BufferManager, file *os.File) (err error) {
 		buf.CurCapacity = n
 		if err != nil {
 			if err == io.EOF {
+				bManager.PushForConsumer(buf)
 				err = nil
-				bManager.PushFullBuffer(buf)
 			}
 			break
 		}
-		bManager.PushFullBuffer(buf)
+		bManager.PushForConsumer(buf)
 	}
 	return err
 }
@@ -132,9 +133,15 @@ func (d *TCPDownloader) readResponse(conn *net.TCPConn) (r *requests.Response, e
 }
 
 func (d *TCPDownloader) onUploadEnd(conn *net.TCPConn) (err error) {
-	_, err = d.readResponse(conn)
+	var req *requests.Response
+	req, err = d.readResponse(conn)
 	if err != nil {
 		return err
 	}
+	isSuccess := req.ReqType == requests.SuccessResponse
+	fmt.Println(
+		"upload finished with success:", isSuccess, " and message ",
+		req.Message,
+	)
 	return nil
 }

@@ -1,13 +1,10 @@
 package server
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
-	"io"
-	"lab2"
-	"lab2/requests"
 	"lab2/utils"
+	"lab2/utils/requests"
 	"net"
 	"os"
 	"path"
@@ -37,14 +34,23 @@ func NewTCPDownloader(dirPath string, maxDelay time.Duration,
 
 func (u *TCPDownloader) Launch() (err error) {
 	defer func(conn *net.TCPConn) { _ = conn.Close() }(u.conn)
-	req, noticeConnection, err := u.handleInitialReq()
+	var req = &requests.Initial{}
+
+	err = utils.ReadRequest(
+		u.conn, u.maxConnInactivityDelay, req,
+		int64(requests.InitialSize(requests.MaxFileNameSize)), nil,
+	)
+	//req, noticeConnection, err := u.handleInitialReq()
+	LOG.Debugln(req)
 	if err != nil {
-		if noticeConnection {
-			_ = u.noticeDownloadFailed(err.Error())
-		}
-		lab2.Log.Info(
+		//if noticeConnection {
+		_ = u.noticeDownloadFailed(err.Error())
+		//}
+
+		LOG.Info(
 			"upload failed with error: ", err, " from ", u.conn.RemoteAddr(),
 		)
+		return
 	}
 
 	filePath := path.Join(u.dirPath, req.Name)
@@ -80,15 +86,17 @@ func (u *TCPDownloader) Launch() (err error) {
 func (u *TCPDownloader) fetchFile(dataSize int64, file *os.File) (total int64, err error) {
 	bufManager := utils.NewBufferManager(BufSize)
 	tag := u.conn.RemoteAddr().String()
-	speedInfo := u.tracker.AddConnection(tag)
-	errChan := make(chan error, 1)
-	defer close(errChan)
-	defer func(bufManager *utils.BufferManager) { bufManager.Close() }(bufManager)
-	go func() { errChan <- fileWriter(file, bufManager) }()
+	//speedInfo := u.tracker.AddConnection(tag)
+	//defer func(bufManager *utils.BufferManager) { bufManager.Close() }(bufManager)
+	var funcErr error
+	go func() {
+		funcErr = fileWriter(file, bufManager)
+	}()
 
 	total = int64(0)
+	defer bufManager.CloseConsumer()
 	for total < dataSize {
-		buf, open := bufManager.GetEmptyBuffer()
+		buf, open := bufManager.GetForPublisher()
 		if !open {
 			break
 		}
@@ -97,57 +105,56 @@ func (u *TCPDownloader) fetchFile(dataSize int64, file *os.File) (total int64, e
 		n, err = utils.ConnReadN(
 			u.conn, buf.Data, buf.MaxCapacity, u.maxConnInactivityDelay,
 		)
+		LOG.Debugln("receive: ", n, " from ", tag)
+		//speedInfo.UpdateSpeed(uint64(n))
 		buf.CurCapacity = n
-		speedInfo.updateSpeed(uint64(n))
 		if err != nil {
-			if err == io.EOF {
-				bufManager.PushFullBuffer(buf)
+			/*if err == io.EOF {
+				bufManager.PushForPublisher(buf)
 				break
-			}
+			}*/
 			return total, err
 		}
 
-		bufManager.PushFullBuffer(buf)
+		bufManager.PushForPublisher(buf)
 		total += int64(n)
 	}
-	bufManager.Close()
-	err = <-errChan
+
+	if funcErr != nil {
+		err = funcErr
+	}
 	return total, err
 }
 
 func fileWriter(file *os.File, bufManager *utils.BufferManager) (err error) {
-	defer func(bufManager *utils.BufferManager) { bufManager.Close() }(bufManager)
+	defer func(bufManager *utils.BufferManager) { bufManager.ClosePublisher() }(bufManager)
 	for {
-		buf, opened := bufManager.GetFullBuffer()
+		buf, opened := bufManager.GetForPublisher()
 		if !opened {
 			return nil
 		}
 		_, err = utils.FileWriteN(file, buf.Data, buf.MaxCapacity)
 		if err != nil {
-			lab2.Log.Errorln("file: ", file.Name(), " error occurred ", err)
+			LOG.Errorln("file: ", file.Name(), " error occurred ", err)
 			return err
 		}
+		bufManager.PushForPublisher(buf)
 	}
 }
 
+/*
 func (u *TCPDownloader) handleInitialReq() (req *requests.Initial,
 	noticeConnection bool, err error) {
-	reqSizeBuf := make([]byte, 4)
-	_, err = utils.ConnReadN(u.conn, reqSizeBuf, 4, u.maxConnInactivityDelay)
-	if err != nil {
-		return nil, false, err
-	}
 
-	initialReqSize := int32(binary.BigEndian.Uint32(reqSizeBuf))
-	maxInitReqSize := requests.InitialSize(requests.MaxFileNameSize)
+	//maxInitReqSize := requests2.InitialSize(requests2.MaxFileNameSize)
 	if initialReqSize > maxInitReqSize {
-		return nil, true, requests.IncorrectRequestSize
+		return nil, true, requests2.IncorrectRequestSize
 	}
 
 	buf := make([]byte, initialReqSize)
-	initialReq := &requests.Initial{}
+	initialReq := &requests2.Initial{}
 	_, err = utils.ConnReadN(
-		u.conn, buf, int(initialReqSize), u.maxConnInactivityDelay,
+		u.conn, buf, int(initialReqSize)-4, u.maxConnInactivityDelay,
 	)
 	if err != nil {
 		return nil, false, err
@@ -160,6 +167,7 @@ func (u *TCPDownloader) handleInitialReq() (req *requests.Initial,
 
 	return initialReq, false, nil
 }
+*/
 
 func (u *TCPDownloader) noticeDownloadSuccessful(message string) (err error) {
 	return notice(message, requests.SuccessResponse, u.conn)
@@ -175,7 +183,7 @@ func notice(message string, responseType int16, conn net.Conn) (err error) {
 	}
 	req, err := requests.NewResponse(responseType, message)
 	if err != nil {
-		lab2.Log.Debugln("what the fuck???")
+		LOG.Debugln("what the fuck???")
 		return err
 	}
 	data := make([]byte, req.HeaderSize)

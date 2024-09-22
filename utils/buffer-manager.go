@@ -3,8 +3,10 @@ package utils
 const bufQ = 2
 
 type BufferManager struct {
-	forFile   chan *Buffer
-	forSocket chan *Buffer
+	consumer        chan *Buffer
+	recipient       chan *Buffer
+	forFileClosed   int8
+	forSocketClosed int8
 }
 
 type Buffer struct {
@@ -23,33 +25,36 @@ func NewBuffer(bufSize int) (b *Buffer) {
 
 func NewBufferManager(bufSize int) (m *BufferManager) {
 	m = &BufferManager{
-		forFile:   make(chan *Buffer, bufQ),
-		forSocket: make(chan *Buffer, bufQ),
+		consumer:  make(chan *Buffer, bufQ),
+		recipient: make(chan *Buffer, bufQ),
 	}
-	m.PushEmptyBuffer(NewBuffer(bufSize))
-	m.PushEmptyBuffer(NewBuffer(bufSize))
+	m.PushForPublisher(NewBuffer(bufSize))
+	m.PushForPublisher(NewBuffer(bufSize))
 	return m
 }
 
-func (m *BufferManager) Close() {
-	close(m.forFile)
-	close(m.forSocket)
+func (m *BufferManager) CloseConsumer() {
+	close(m.consumer)
 }
 
-func (m *BufferManager) GetEmptyBuffer() (b *Buffer, opened bool) {
-	b, opened = <-m.forSocket
+func (m *BufferManager) ClosePublisher() {
+	close(m.recipient)
+}
+
+func (m *BufferManager) GetForPublisher() (b *Buffer, opened bool) {
+	b, opened = <-m.recipient
 	return
 }
 
-func (m *BufferManager) PushFullBuffer(b *Buffer) {
-	m.forFile <- b
+func (m *BufferManager) PushForPublisher(b *Buffer) {
+	m.consumer <- b
 }
 
-func (m *BufferManager) GetFullBuffer() (b *Buffer, opened bool) {
-	b, opened = <-m.forFile
+func (m *BufferManager) GetForConsumer() (b *Buffer, opened bool) {
+	b, opened = <-m.consumer
 	return
 }
 
-func (m *BufferManager) PushEmptyBuffer(b *Buffer) {
-	m.forSocket <- b
+func (m *BufferManager) PushForConsumer(b *Buffer) {
+	m.recipient <- b
 }

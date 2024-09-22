@@ -2,38 +2,16 @@ package server
 
 import (
 	"fmt"
-	serverinterfaces "lab2/server-interfaces"
+	serverinterfaces "lab2/server/server-interfaces"
 	"sync"
 	"time"
 )
-
-type ConnectionInfo struct {
-	expired    bool
-	start      time.Time
-	lastUpdate time.Time
-	total      uint64
-	speed      float64
-	avg        float64
-}
-
-func (s *ConnectionInfo) updateSpeed(recorded uint64) (avg float64) {
-	now := time.Now()
-	avgDiff := now.Sub(s.lastUpdate).Seconds()
-	totalDiff := now.Sub(s.start).Seconds()
-
-	s.lastUpdate = now
-	s.total += recorded
-	s.speed = float64(recorded) / avgDiff
-	s.avg = float64(s.total) / totalDiff
-
-	return s.speed
-}
 
 type SpeedTracker struct {
 	serverinterfaces.AbstractSpeedTracker
 	expiredCheckDelay time.Duration
 	trackDelay        time.Duration
-	data              map[string]*ConnectionInfo
+	data              map[string]*serverinterfaces.ConnectionInfo
 	mux               sync.RWMutex
 }
 
@@ -41,17 +19,17 @@ func NewSpeedTracker(trackDelay time.Duration, expiredCheckDelay time.Duration) 
 	return &SpeedTracker{
 		expiredCheckDelay: expiredCheckDelay,
 		trackDelay:        trackDelay,
-		data:              make(map[string]*ConnectionInfo),
+		data:              make(map[string]*serverinterfaces.ConnectionInfo),
 		mux:               sync.RWMutex{},
 	}
 }
 
-func (s *SpeedTracker) AddConnection(tag string) (data *ConnectionInfo) {
+func (s *SpeedTracker) AddConnection(tag string) (data *serverinterfaces.ConnectionInfo) {
 	s.mux.Lock()
-	data = &ConnectionInfo{
-		expired:    false,
-		lastUpdate: time.Now(),
-		start:      time.Now(),
+	data = &serverinterfaces.ConnectionInfo{
+		Expired:    false,
+		LastUpdate: time.Now(),
+		Start:      time.Now(),
 	}
 	s.data[tag] = data
 	s.mux.Unlock()
@@ -64,7 +42,7 @@ func (s *SpeedTracker) DeleteConnection(tag string) {
 	s.mux.Unlock()
 }
 
-func (s *SpeedTracker) GetSpeedInfo(tag string) (data *ConnectionInfo) {
+func (s *SpeedTracker) GetSpeedInfo(tag string) (data *serverinterfaces.ConnectionInfo) {
 	s.mux.RLock()
 	data = s.data[tag]
 	s.mux.RUnlock()
@@ -78,7 +56,7 @@ func (s *SpeedTracker) Launch() {
 		fmt.Print("\033[H\033[2J")
 		for addr, speedInfo := range s.data {
 			fmt.Println(
-				"connection ", addr, " speed ", speedInfo.speed, " avg ", speedInfo.avg,
+				"connection ", addr, " speed ", speedInfo.Speed, " avg ", speedInfo.Avg,
 			)
 		}
 		s.mux.RUnlock()
@@ -86,7 +64,7 @@ func (s *SpeedTracker) Launch() {
 		if time.Now().Sub(lastCheck) > s.expiredCheckDelay {
 			s.mux.Lock()
 			for addr, info := range s.data {
-				if info.expired {
+				if info.Expired {
 					delete(s.data, addr)
 				}
 			}
