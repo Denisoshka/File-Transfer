@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"fmt"
+	serverinterfaces "lab2/server/server-interfaces"
 	"lab2/utils"
 	"lab2/utils/requests"
 	"net"
@@ -16,6 +17,7 @@ const (
 )
 
 type TCPDownloader struct {
+	serverinterfaces.AbstractTCPDownloader
 	dirPath                string
 	maxConnInactivityDelay time.Duration
 	conn                   *net.TCPConn
@@ -40,16 +42,11 @@ func (u *TCPDownloader) Launch() (err error) {
 		u.conn, u.maxConnInactivityDelay, req,
 		int64(requests.InitialSize(requests.MaxFileNameSize)), nil,
 	)
-	//req, noticeConnection, err := u.handleInitialReq()
-	LOG.Debugln(req)
 	if err != nil {
-		//if noticeConnection {
-		_ = u.noticeDownloadFailed(err.Error())
-		//}
-
 		LOG.Info(
 			"upload failed with error: ", err, " from ", u.conn.RemoteAddr(),
 		)
+		err = u.noticeDownloadFailed(err.Error())
 		return
 	}
 
@@ -57,22 +54,28 @@ func (u *TCPDownloader) Launch() (err error) {
 	file, fileExists, err := prepareFile(filePath, req.DataSize)
 	if err != nil {
 		if fileExists {
-			_ = u.noticeDownloadFailed("this file already exists")
+			err = u.noticeDownloadFailed("this file already exists")
 		} else {
-			_ = u.noticeDownloadFailed("unable to save file")
+			err = u.noticeDownloadFailed("unable to save file")
 		}
 		return
 	}
 
-	defer func(file *os.File) { _ = file.Close() }(file)
-
 	total, err := u.fetchFile(req.DataSize, file)
-	var netErr net.Error
-	if errors.As(err, &netErr) && netErr.Timeout() {
-		LOG.Info(u.conn, err)
+	_ = file.Close()
+
+	if err != nil {
+		LOG.Info("file fetch finished with", err)
 		err = u.noticeDownloadFailed(err.Error())
 		return
 	}
+
+	err = u.onDownloadEnd(total, req)
+	return err
+}
+
+func (u *TCPDownloader) onDownloadEnd(total int64,
+	req *requests.Initial) (err error) {
 	if total == req.DataSize {
 		msg := fmt.Sprint("recorded ", total, " bytes")
 		err = u.noticeDownloadSuccessful(msg)
@@ -81,18 +84,18 @@ func (u *TCPDownloader) Launch() (err error) {
 		} else {
 			LOG.Info(u.conn, err)
 		}
-		return
+	} else {
+		msg := fmt.Sprint("recorded ", total, " bytes")
+		err = u.noticeDownloadFailed(msg)
 	}
-	err = u.noticeDownloadFailed(fmt.Sprint("recorded ", total, " bytes"))
-	//lab2.Log.Debugln(u.conn, err)
 	return err
 }
 
 func (u *TCPDownloader) fetchFile(dataSize int64, file *os.File) (total int64, err error) {
 	bufManager := utils.NewBufferManager(BufSize)
 	tag := u.conn.RemoteAddr().String()
-	//speedInfo := u.tracker.AddConnection(tag)
-	//defer func(bufManager *utils.BufferManager) { bufManager.Close() }(bufManager)
+	connInfo := u.tracker.AddConnection(tag)
+
 	var funcErr error
 	go func() { funcErr = fileWriter(file, bufManager) }()
 
@@ -103,36 +106,37 @@ func (u *TCPDownloader) fetchFile(dataSize int64, file *os.File) (total int64, e
 			break
 		}
 
-		remains := dataSize - total
-		var toRead int
-		if remains > int64(buf.MaxCapacity()) {
-			toRead = buf.MaxCapacity()
-		} else {
-			toRead = int(remains)
-		}
-
 		received, err = utils.ConnReadN(
-			u.conn, buf.Data(), toRead, u.maxConnInactivityDelay,
+			u.conn, buf.Data(),
+			int(getReadQ(dataSize, total, int64(buf.MaxCapacity()))),
+			u.maxConnInactivityDelay,
 		)
+
+		connInfo.AddRecordedQ(uint64(received))
 		total += int64(received)
+
 		if err != nil {
 			break
 		}
-		LOG.Debugln("receive: ", received, " total ", total, " from ", tag)
 
 		bufManager.PushForConsumer(buf)
 	}
-	bufManager.CloseForConsumer()
 
-	if funcErr != nil {
-		if err != nil {
-			errors.Join(err, funcErr)
-		} else {
-			err = funcErr
-		}
-	}
+	err = joinErrors(funcErr, err)
+	connInfo.MarkAsExpired()
+	bufManager.CloseForConsumer()
+	LOG.Infoln("receive:", total, "from", tag, "with err", err)
 
 	return total, err
+}
+
+func getReadQ(dataSize int64, total int64, expectedMaximum int64) int64 {
+	remains := dataSize - total
+	if remains > expectedMaximum {
+		return expectedMaximum
+	} else {
+		return remains
+	}
 }
 
 func fileWriter(file *os.File, bufManager *utils.BufferManager) (err error) {
@@ -179,4 +183,15 @@ func notice(message string, responseType int16, conn net.Conn) (err error) {
 		return err
 	}
 	return nil
+}
+
+func joinErrors(funcErr error, err error) error {
+	if funcErr != nil {
+		if err != nil {
+			errors.Join(err, funcErr)
+		} else {
+			err = funcErr
+		}
+	}
+	return err
 }

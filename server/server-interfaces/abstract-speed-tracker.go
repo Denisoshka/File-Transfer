@@ -1,36 +1,58 @@
 package server_interfaces
 
 import (
-	"net"
+	"errors"
 	"time"
 )
 
+var (
+	TrackerAlreadyLaunched = errors.New("tracker already launched")
+)
+
 type AbstractSpeedTracker interface {
-	NewSpeedTracker(trackDelay time.Duration) *AbstractSpeedTracker
-	AddConnection(conn *net.Conn) (data *ConnectionInfo)
-	DeleteConnection(conn *net.Conn)
-	GetSpeedInfo(conn *net.Conn) *ConnectionInfo
-	Launch()
+	NewSpeedTracker(trackDelay time.Duration) (tracker *AbstractSpeedTracker)
+	AddConnection(tag string) (data *ConnectionInfo)
+	DeleteConnection(tag string)
+	GetSpeedInfo(gat string) (data *ConnectionInfo)
+	Launch() (err error)
 }
 
 type ConnectionInfo struct {
-	Expired    bool
+	expired    bool
 	Start      time.Time
 	LastUpdate time.Time
 	total      uint64
-	Speed      float64
-	Avg        float64
+	speed      float64
+	avg        float64
 }
 
-func (s *ConnectionInfo) UpdateSpeed(recorded uint64) (avg float64) {
+func (s *ConnectionInfo) AddRecordedQ(recorded uint64) {
 	now := time.Now()
 	avgDiff := now.Sub(s.LastUpdate).Seconds()
 	totalDiff := now.Sub(s.Start).Seconds()
 
 	s.LastUpdate = now
 	s.total += recorded
-	s.Speed = float64(recorded) / avgDiff
-	s.Avg = float64(s.total) / totalDiff
+	s.speed = float64(recorded) / avgDiff
+	s.avg = float64(s.total) / totalDiff
+}
 
-	return s.Speed
+func (s *ConnectionInfo) Speed() float64 {
+	return s.speed
+}
+
+func (s *ConnectionInfo) Avg() float64 {
+	return s.avg
+}
+
+func (s *ConnectionInfo) Total() uint64 {
+	return s.total
+}
+
+func (s *ConnectionInfo) Expired() bool {
+	return s.expired
+}
+
+func (s *ConnectionInfo) MarkAsExpired() {
+	s.expired = true
 }

@@ -37,7 +37,14 @@ func (a *ConnectionAcceptor) Launch() {
 	if err != nil {
 		panic(err)
 	}
+
 	defer func(listener *net.TCPListener) { _ = listener.Close() }(listener)
+	go func() {
+		err = a.speedTracker.Launch()
+		if err != nil {
+			panic(err)
+		}
+	}()
 
 	for {
 		conn, err := listener.AcceptTCP()
