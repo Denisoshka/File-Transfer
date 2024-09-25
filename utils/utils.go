@@ -18,10 +18,10 @@ func ConnReadN(conn net.Conn, data []byte, n int,
 		}
 
 		start, err = conn.Read(data[total:n])
-		total += start
 		if err != nil {
 			break
 		}
+		total += start
 	}
 	return total, err
 }

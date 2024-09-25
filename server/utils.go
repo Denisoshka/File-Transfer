@@ -23,7 +23,7 @@ func (f *CustomTextFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 }
 
 const (
-	DirPerm  = 0666
+	DirPerm  = 0766
 	FilePerm = 0666
 )
 

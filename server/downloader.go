@@ -60,9 +60,10 @@ func (u *TCPDownloader) Launch() (err error) {
 		}
 		return
 	}
+	defer func(file *os.File) { _ = file.Close() }(file)
 
+	LOG.Infoln("start receive", req)
 	total, err := u.fetchFile(req.DataSize, file)
-	_ = file.Close()
 
 	if err != nil {
 		LOG.Info("file fetch finished with", err)
@@ -118,7 +119,7 @@ func (u *TCPDownloader) fetchFile(dataSize int64, file *os.File) (total int64, e
 		if err != nil {
 			break
 		}
-
+		buf.SetCurCapacity(received)
 		bufManager.PushForConsumer(buf)
 	}
 
@@ -146,7 +147,7 @@ func fileWriter(file *os.File, bufManager *utils.BufferManager) (err error) {
 		if !opened {
 			return nil
 		}
-		_, err = utils.FileWriteN(file, buf.Data(), buf.MaxCapacity())
+		_, err = utils.FileWriteN(file, buf.Data(), buf.CurCapacity())
 		if err != nil {
 			LOG.Errorln("file: ", file.Name(), " error occurred ", err)
 			return err
@@ -177,21 +178,9 @@ func notice(message string, responseType int16, conn net.Conn) (err error) {
 	if err != nil {
 		return err
 	}
-
 	_, err = utils.ConnWriteN(conn, data, int(req.HeaderSize))
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func joinErrors(funcErr error, err error) error {
-	if funcErr != nil {
-		if err != nil {
-			errors.Join(err, funcErr)
-		} else {
-			err = funcErr
-		}
-	}
-	return err
 }
