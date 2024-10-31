@@ -2,9 +2,9 @@ package utils
 
 import (
 	"encoding/binary"
+	"io"
 	"lab2/utils/requests"
 	"net"
-	"os"
 	"time"
 )
 
@@ -12,13 +12,11 @@ func ConnReadN(conn net.Conn, data []byte, n int,
 	maxSocketInactivity time.Duration) (total int, err error) {
 	total = 0
 	for start := 0; total < n; {
-		err = conn.SetReadDeadline(time.Now().Add(maxSocketInactivity))
-		if err != nil {
+
+		if err = conn.SetReadDeadline(time.Now().Add(maxSocketInactivity)); err != nil {
 			break
 		}
-
-		start, err = conn.Read(data[total:n])
-		if err != nil {
+		if start, err = conn.Read(data[total:n]); err != nil {
 			break
 		}
 		total += start
@@ -26,7 +24,7 @@ func ConnReadN(conn net.Conn, data []byte, n int,
 	return total, err
 }
 
-func ConnWriteN(conn net.Conn, data []byte, n int) (total int, err error) {
+/*func ConnWriteN(conn net.Conn, data []byte, n int) (total int, err error) {
 	total = 0
 	for start := 0; total < n; total += start {
 		start, err = conn.Write(data[total:n])
@@ -35,9 +33,9 @@ func ConnWriteN(conn net.Conn, data []byte, n int) (total int, err error) {
 		}
 	}
 	return total, err
-}
+}*/
 
-func FileWriteN(file *os.File, data []byte, n int) (total int, err error) {
+/*func FileWriteN(file *os.File, data []byte, n int) (total int, err error) {
 	total = 0
 	for start := 0; total < n; total += start {
 		start, err = file.Write(data[total:n])
@@ -46,9 +44,9 @@ func FileWriteN(file *os.File, data []byte, n int) (total int, err error) {
 		}
 	}
 	return total, err
-}
+}*/
 
-func FileReadN(file *os.File, data []byte, n int) (total int, err error) {
+/*func FileReadN(file *os.File, data []byte, n int) (total int, err error) {
 	total = 0
 	for start := 0; total < n; total += start {
 		start, err = file.Read(data[total:n])
@@ -57,12 +55,17 @@ func FileReadN(file *os.File, data []byte, n int) (total int, err error) {
 		}
 	}
 	return total, err
-}
+}*/
 
 func ReadRequest(conn net.Conn, maxConnInactivityDelay time.Duration,
 	req requests.AbstractRequest, maxReqSize int64, buf []byte) (err error) {
 	reqSizeBuf := make([]byte, 4)
-	_, err = ConnReadN(conn, reqSizeBuf, 4, maxConnInactivityDelay)
+	err = conn.SetReadDeadline(time.Now().Add(maxConnInactivityDelay))
+	if err != nil {
+		return err
+	}
+	_, err = io.ReadFull(conn, reqSizeBuf[:4])
+	//_, err = ConnReadN(conn, reqSizeBuf, 4, maxConnInactivityDelay)
 	if err != nil {
 		return err
 	}
@@ -75,9 +78,15 @@ func ReadRequest(conn net.Conn, maxConnInactivityDelay time.Duration,
 		buf = make([]byte, initialReqSize)
 	}
 
-	_, err = ConnReadN(
+	if err = conn.SetReadDeadline(time.Now().Add(maxConnInactivityDelay)); err != nil {
+		return err
+	}
+	if _, err = io.ReadFull(conn, buf[4:int(initialReqSize)-4]); err != nil {
+		return err
+	}
+	/*_, err = ConnReadN(
 		conn, buf[4:], int(initialReqSize)-4, maxConnInactivityDelay,
-	)
+	)*/
 	binary.BigEndian.PutUint32(buf[0:4], uint32(initialReqSize))
 	err = req.DecodeFrom(buf)
 	if err != nil {

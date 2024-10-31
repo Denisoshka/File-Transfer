@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"fmt"
+	"io"
 	serverinterfaces "lab2/server/server-interfaces"
 	"lab2/utils"
 	"lab2/utils/requests"
@@ -106,13 +107,20 @@ func (u *TCPDownloader) fetchFile(dataSize int64, file *os.File) (total int64, e
 		if !open {
 			break
 		}
-
-		received, err = utils.ConnReadN(
+		if err = u.conn.SetReadDeadline(
+			time.Now().Add(u.maxConnInactivityDelay),
+		); err != nil {
+			break
+		}
+		received, err = io.ReadFull(
+			u.conn,
+			buf.Data()[:int(getReadQ(dataSize, total, int64(buf.MaxCapacity())))],
+		)
+		/*received, err = utils.ConnReadN(
 			u.conn, buf.Data(),
 			int(getReadQ(dataSize, total, int64(buf.MaxCapacity()))),
 			u.maxConnInactivityDelay,
-		)
-
+		)*/
 		connInfo.AddRecordedQ(uint64(received))
 		total += int64(received)
 
@@ -147,7 +155,8 @@ func fileWriter(file *os.File, bufManager *utils.BufferManager) (err error) {
 		if !opened {
 			return nil
 		}
-		_, err = utils.FileWriteN(file, buf.Data(), buf.CurCapacity())
+		_, err = file.Write(buf.Data()[:buf.CurCapacity()])
+		//_, err = utils.FileWriteN(file, buf.Data(), buf.CurCapacity())
 		if err != nil {
 			LOG.Errorln("file: ", file.Name(), " error occurred ", err)
 			return err
@@ -178,7 +187,8 @@ func notice(message string, responseType int16, conn net.Conn) (err error) {
 	if err != nil {
 		return err
 	}
-	_, err = utils.ConnWriteN(conn, data, int(req.HeaderSize))
+	_, err = conn.Write(data[:int(req.HeaderSize)])
+	//_, err = utils.ConnWriteN(conn, data, int(req.HeaderSize))
 	if err != nil {
 		return err
 	}

@@ -83,7 +83,8 @@ func (d *TCPDownloader) uploadFile(file *os.File,
 			break
 		}
 
-		q, err = utils.ConnWriteN(conn, buf.Data(), buf.CurCapacity())
+		//q, err = utils.ConnWriteN(conn, buf.Data(), buf.CurCapacity())
+		q, err = conn.Write(buf.Data()[:buf.CurCapacity()])
 		//fmt.Println("send ", q, " bytes")
 		if err != nil {
 			break
@@ -115,8 +116,8 @@ func sendInitial(conn *net.TCPConn, stat os.FileInfo,
 	if err != nil {
 		return err
 	}
-
-	_, err = utils.ConnWriteN(conn, reqBuf, len(reqBuf))
+	_, err = conn.Write(reqBuf)
+	//_, err = utils.ConnWriteN(conn, reqBuf, len(reqBuf))
 	if err != nil {
 		return err
 	}
@@ -130,8 +131,8 @@ func fileReader(bManager *utils.BufferManager, file *os.File) (err error) {
 			break
 		}
 		var n int
-		n, err = utils.FileReadN(file, buf.Data(), buf.MaxCapacity())
-		buf.SetCurCapacity(n)
+		//n, err = utils.FileReadN(file, buf.Data(), buf.MaxCapacity())
+		n, err = io.ReadFull(file, buf.Data())
 		if err != nil {
 			if err == io.EOF {
 				bManager.PushForConsumer(buf)
@@ -139,6 +140,7 @@ func fileReader(bManager *utils.BufferManager, file *os.File) (err error) {
 			}
 			break
 		}
+		buf.SetCurCapacity(n)
 		bManager.PushForConsumer(buf)
 	}
 	bManager.CloseForConsumer()
